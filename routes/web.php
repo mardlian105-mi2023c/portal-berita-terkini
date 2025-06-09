@@ -4,14 +4,19 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\CommentController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/news', [NewsController::class, 'userIndex'])->name('news.index');
-Route::get('/news/{news}', [NewsController::class, 'show'])->name('news.show');
-
+Route::resource('news', NewsController::class);
+Route::get('/berita', [NewsController::class, 'berita'])->name('berita');
+Route::get('/berita/kategori/{id}', [NewsController::class, 'kategori'])->name('berita.kategori');
 Route::prefix('admin')->middleware(['auth'])->name('admin.')->group(function () {
     Route::resource('news', NewsController::class);
 });
+
+Route::get('/about', function () {
+    return view('about');
+})->name('about');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

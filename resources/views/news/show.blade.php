@@ -4,9 +4,9 @@
 <div class="max-w-4xl mx-auto px-4 py-10">
     <div class="bg-white shadow-xl rounded-lg overflow-hidden">
         @if ($news->image)
-            <img src="{{ asset('storage/' . $news->image) }}" alt="{{ $news->title }}" class="w-full h-72 object-cover">
+            <img src="{{ asset('storage/' . $news->image) }}" alt="{{ $news->title }}" class="w-full h-96 object-cover">
         @else
-            <img src="https://picsum.photos/800/400?random={{ $news->id }}" alt="Default Image" class="w-full h-72 object-cover">
+            <img src="https://picsum.photos/800/400?random={{ $news->id }}" alt="Default Image" class="w-full h-96 object-cover">
         @endif
 
         <div class="p-6">
@@ -20,7 +20,6 @@
             <div class="mt-6 text-sm text-gray-500">
                 Diposting oleh: <strong>{{ $news->user->name ?? 'Admin' }}</strong> pada {{ $news->created_at->format('d M Y') }}
             </div>
-
             <a href="{{ route('news.index') }}" class="mt-6 inline-block text-blue-600 hover:underline">
                 ← Kembali ke Daftar Berita
             </a>

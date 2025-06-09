@@ -12,98 +12,131 @@ class NewsController extends Controller
 {
     public function index()
     {
-        // Mengambil semua berita yang ada beserta kategorinya
         $news = News::with('category')->latest()->get();
         return view('admin.news.index', compact('news'));
     }
 
+    public function berita()
+    {
+        $news = News::latest()->paginate(9);
+        return view('berita', compact('news'));
+    }
+
+    public function kategori($id)
+    {
+        $category = Category::findOrFail($id);
+        $news = $category->news()->latest()->paginate(9);
+        return view('news.index', compact('news'));
+    }
+
     public function userIndex()
     {
-        $news = News::with('category')->latest()->paginate(9); // Pakai paginate kalau banyak
+        $news = News::with('category')->latest()->paginate(9); 
         return view('news.index', compact('news'));
+    }
+
+    public function apiIndex()
+    {
+        $news = News::with('category')->latest()->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $news
+        ], 200);
     }
 
     public function create()
     {
-        // Mengambil semua kategori untuk dipilih
         $categories = Category::all();
         return view('admin.news.create', compact('categories'));
     }
 
     public function store(Request $request)
     {
-        // Validasi input
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required',
-            'category_id' => 'required|exists:categories,id', // Menambahkan kategori
+            'category_id' => 'required|exists:categories,id',
             'image' => 'nullable|image|max:2048',
         ]);
 
-        // Proses upload gambar
         if ($request->hasFile('image')) {
             $validated['image'] = $request->file('image')->store('news_images', 'public');
         }
 
-        // Menambahkan ID pengguna
-        $validated['user_id'] = Auth::id();
+        $validated['user_id'] = Auth::id() ?? 1;
 
-        // Menyimpan data berita ke dalam database
-        News::create($validated);
+        $news = News::create($validated);
 
-        // Redirect ke halaman index dengan pesan sukses
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Berita berhasil ditambahkan!',
+                'data' => $news->load('category')
+            ], 201);
+        }
+
         return redirect()->route('admin.news.index')->with('success', 'Berita berhasil ditambahkan!');
     }
 
     public function edit(News $news)
     {
-        // Mengambil semua kategori untuk dipilih
         $categories = Category::all();
         return view('admin.news.edit', compact('news', 'categories'));
     }
 
     public function update(Request $request, News $news)
     {
-        // Validasi input
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required',
-            'category_id' => 'required|exists:categories,id', // Menambahkan kategori
+            'category_id' => 'required|exists:categories,id',
             'image' => 'nullable|image|max:2048',
         ]);
 
-        // Proses upload gambar jika ada
         if ($request->hasFile('image')) {
-            // Hapus gambar lama jika ada
             if ($news->image) {
                 Storage::disk('public')->delete($news->image);
             }
             $validated['image'] = $request->file('image')->store('news_images', 'public');
         }
 
-        // Update data berita
         $news->update($validated);
 
-        // Redirect ke halaman index dengan pesan sukses
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Berita berhasil diupdate!',
+                'data' => $news->load('category')
+            ], 201);
+        }
+        
         return redirect()->route('admin.news.index')->with('success', 'Berita berhasil diperbarui!');
     }
 
-    public function destroy(News $news)
+    public function destroy(Request $request, News $news)
     {
-        // Hapus gambar jika ada
         if ($news->image) {
             Storage::disk('public')->delete($news->image);
         }
 
-        // Hapus berita dari database
         $news->delete();
 
-        // Redirect ke halaman index dengan pesan sukses
-        return redirect()->route('admin.news.index')->with('success', 'Berita berhasil dihapus!');
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Berita berhasil dihapus!'
+        ], 200);
     }
 
-    public function show(News $news)
+    public function show(Request $request, News $news)
     {
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'data' => $news->load('category')
+            ]);
+        }
+
         return view('news.show', compact('news'));
     }
 }

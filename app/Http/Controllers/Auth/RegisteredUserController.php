@@ -16,7 +16,7 @@ use Illuminate\View\View;
 class RegisteredUserController extends Controller
 {
     /**
-     * Display the registration view.
+     * Display the registration view (for web).
      */
     public function create(): View
     {
@@ -26,26 +26,42 @@ class RegisteredUserController extends Controller
     /**
      * Handle an incoming registration request.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * Supports both web form and API JSON requests.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
+        // Validasi data
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // Buat user baru
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
+        // Event Laravel default
         event(new Registered($user));
 
+        // Login otomatis
         Auth::login($user);
 
+        // 🔁 Jika request dari Postman / API
+        if ($request->expectsJson()) {
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'message' => 'User registered successfully',
+                'user' => $user,
+                'token' => $token,
+            ], 201);
+        }
+
+        // 🌐 Jika request dari form web
         return redirect(RouteServiceProvider::HOME);
     }
 }
