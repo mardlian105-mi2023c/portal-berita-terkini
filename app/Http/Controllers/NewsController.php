@@ -31,7 +31,7 @@ class NewsController extends Controller
 
     public function userIndex()
     {
-        $news = News::with('category')->latest()->paginate(9); 
+        $news = News::with('category')->latest()->paginate(9);
         return view('news.index', compact('news'));
     }
 
@@ -106,11 +106,11 @@ class NewsController extends Controller
         if ($request->expectsJson() || $request->is('api/*')) {
             return response()->json([
                 'status' => 'success',
-                'message' => 'Berita berhasil diupdate!',
+                'message' => 'Berita berhasil diperbarui!',
                 'data' => $news->load('category')
-            ], 201);
+            ], 200);
         }
-        
+
         return redirect()->route('admin.news.index')->with('success', 'Berita berhasil diperbarui!');
     }
 
@@ -122,10 +122,14 @@ class NewsController extends Controller
 
         $news->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Berita berhasil dihapus!'
-        ], 200);
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Berita berhasil dihapus!'
+            ], 200);
+        }
+
+        return redirect()->route('admin.news.index')->with('success', 'Berita berhasil dihapus!');
     }
 
     public function show(Request $request, News $news)
